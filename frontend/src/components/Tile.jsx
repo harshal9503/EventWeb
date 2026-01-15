@@ -6,6 +6,8 @@ import {
   MessageSquare,
   ExternalLink,
   Loader2,
+  Star,
+  Download,
 } from "lucide-react";
 
 const Tile = ({
@@ -24,9 +26,15 @@ const Tile = ({
   };
 
   const colors = {
-    video: "from-blue-500 to-cyan-500",
+    video: "from-red-500 to-orange-500",
     pdf: "from-emerald-500 to-teal-500",
     feedback: "from-purple-500 to-pink-500",
+  };
+
+  const buttonText = {
+    video: "Watch Video",
+    pdf: "View PDF",
+    feedback: "Submit Feedback",
   };
 
   const Icon = icons[iconType];
@@ -57,20 +65,45 @@ const Tile = ({
           >
             <Icon className="w-8 h-8 text-white" />
           </div>
-          <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-primary-500 transition-colors" />
+          {iconType === "feedback" && (
+            <div className="flex items-center text-yellow-500">
+              <Star className="w-4 h-4 fill-current" />
+              <span className="ml-1 text-sm font-medium">Important</span>
+            </div>
+          )}
+          {iconType === "pdf" && (
+            <Download className="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+          )}
+          {iconType === "video" && (
+            <ExternalLink className="w-5 h-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+          )}
         </div>
 
         <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
-        <p className="text-gray-600 mb-4">{description}</p>
+        <p className="text-gray-600 mb-6">{description}</p>
 
-        <div className="flex items-center text-primary-600 font-medium">
-          <span>Open Resource</span>
-          <motion.div
-            className="ml-2"
-            animate={isHovered ? { x: 5 } : { x: 0 }}
-          >
-            →
-          </motion.div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center text-primary-600 font-medium">
+            <span>{buttonText[iconType]}</span>
+            <motion.div
+              className="ml-2"
+              animate={isHovered ? { x: 5 } : { x: 0 }}
+            >
+              →
+            </motion.div>
+          </div>
+
+          {iconType === "pdf" && (
+            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+              2.1 MB
+            </span>
+          )}
+
+          {iconType === "video" && (
+            <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+              12 min
+            </span>
+          )}
         </div>
       </div>
     </motion.div>

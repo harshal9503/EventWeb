@@ -1,18 +1,19 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Lock, Shield, AlertCircle } from "lucide-react";
+import { Lock, Shield, AlertCircle, CheckCircle } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Button from "../components/Button";
 
-const AdminLogin = () => {
+const AdminLogin = ({ setIsAdminAuthenticated }) => {
   const navigate = useNavigate();
   const [credentials, setCredentials] = useState({
-    email: "",
-    password: "",
+    email: "admin@eventhub.com",
+    password: "admin123",
   });
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,7 +34,13 @@ const AdminLogin = () => {
         credentials.password === "admin123"
       ) {
         localStorage.setItem("adminLoggedIn", "true");
-        navigate("/admin");
+        setLoginSuccess(true);
+
+        // Show success message then redirect
+        setTimeout(() => {
+          setIsAdminAuthenticated(true);
+          navigate("/admin");
+        }, 1500);
       } else {
         setError("Invalid admin credentials");
       }
@@ -49,6 +56,39 @@ const AdminLogin = () => {
     }));
     if (error) setError("");
   };
+
+  if (loginSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-4">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md w-full text-center"
+        >
+          <div className="p-4 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+            <CheckCircle className="w-12 h-12 text-white" />
+          </div>
+
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Login Successful!
+          </h2>
+
+          <p className="text-gray-300 mb-6">
+            Redirecting to Admin Dashboard...
+          </p>
+
+          <div className="animate-pulse">
+            <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 animate-pulse"
+                style={{ width: "100%" }}
+              ></div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
@@ -140,22 +180,6 @@ const AdminLogin = () => {
                     </div>
                   </motion.div>
                 )}
-
-                <div className="flex items-center justify-between">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      className="rounded bg-gray-700 border-gray-600 text-primary-500 focus:ring-primary-500"
-                    />
-                    <span className="text-sm text-gray-400">Remember me</span>
-                  </label>
-                  <button
-                    type="button"
-                    className="text-sm text-primary-400 hover:text-primary-300"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
 
                 <Button
                   type="submit"

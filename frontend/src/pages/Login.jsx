@@ -1,17 +1,17 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, ArrowLeft, AlertCircle, CheckCircle } from "lucide-react";
+import { Mail, ArrowLeft, AlertCircle, CheckCircle, Lock } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Button from "../components/Button";
 
-const Login = () => {
+const Login = ({ setIsUserAuthenticated }) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
 
   const handleEmailSubmit = async (e) => {
     e.preventDefault();
@@ -38,7 +38,15 @@ const Login = () => {
 
       if (isRegistered) {
         setOtpSent(true);
-        // Simulate OTP/magic link sent
+        // Store email for OTP verification
+        localStorage.setItem("userEmail", email);
+
+        // In a real app, you would send OTP via email
+        // For demo, we'll generate a random OTP
+        const demoOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        localStorage.setItem("demoOtp", demoOtp);
+
+        console.log("Demo OTP (for testing):", demoOtp);
       } else {
         setError("This email is not registered. Please register first.");
       }
@@ -47,10 +55,32 @@ const Login = () => {
     }, 1500);
   };
 
+  const handleOtpChange = (index, value) => {
+    if (value && !/^\d$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Focus next input
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      // Move to previous input on backspace
+      document.getElementById(`otp-${index - 1}`)?.focus();
+    }
+  };
+
   const handleOtpSubmit = (e) => {
     e.preventDefault();
 
-    if (otp.length !== 6) {
+    const enteredOtp = otp.join("");
+
+    if (enteredOtp.length !== 6) {
       setError("Please enter a valid 6-digit OTP");
       return;
     }
@@ -59,8 +89,19 @@ const Login = () => {
 
     // Simulate OTP verification
     setTimeout(() => {
-      localStorage.setItem("userLoggedIn", "true");
-      navigate("/portal");
+      // For demo purposes, accept any 6-digit OTP or the specific demo OTP
+      const demoOtp = localStorage.getItem("demoOtp") || "123456";
+
+      if (enteredOtp === demoOtp || enteredOtp === "123456") {
+        localStorage.setItem("userLoggedIn", "true");
+        localStorage.setItem("userEmail", email);
+        setIsUserAuthenticated(true);
+        navigate("/portal");
+      } else {
+        setError("Invalid OTP. Try 123456 for demo.");
+      }
+
+      setIsLoading(false);
     }, 1000);
   };
 
@@ -69,9 +110,12 @@ const Login = () => {
 
     // Simulate magic link sent
     setTimeout(() => {
-      alert("Magic link sent to your email! Click the link to login.");
+      localStorage.setItem("userLoggedIn", "true");
+      localStorage.setItem("userEmail", email);
+      setIsUserAuthenticated(true);
+      navigate("/portal");
       setIsLoading(false);
-    }, 1000);
+    }, 1500);
   };
 
   return (
@@ -122,6 +166,7 @@ const Login = () => {
                     }}
                     className="input-field"
                     placeholder="john@example.com"
+                    autoComplete="email"
                   />
                 </div>
 
@@ -168,8 +213,9 @@ const Login = () => {
                   type="button"
                   onClick={handleMagicLink}
                   disabled={isLoading}
-                  className="w-full py-3 px-4 border-2 border-primary-600 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 transition-all duration-300 disabled:opacity-50"
+                  className="w-full py-3 px-4 border-2 border-primary-600 text-primary-600 font-semibold rounded-lg hover:bg-primary-50 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
+                  <Lock className="w-5 h-5 mr-2" />
                   Send Magic Link
                 </button>
 
@@ -196,7 +242,10 @@ const Login = () => {
                       OTP Sent Successfully
                     </p>
                     <p className="text-emerald-600 text-sm">
-                      We've sent a 6-digit code to {email}
+                      We've sent a 6-digit code to <strong>{email}</strong>
+                    </p>
+                    <p className="text-emerald-500 text-xs mt-1">
+                      Demo OTP: <span className="font-mono">123456</span>
                     </p>
                   </div>
                 </motion.div>
@@ -205,28 +254,30 @@ const Login = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     6-Digit Verification Code
                   </label>
-                  <div className="flex space-x-3">
-                    {[...Array(6)].map((_, i) => (
+                  <div className="flex space-x-3 justify-center">
+                    {[0, 1, 2, 3, 4, 5].map((index) => (
                       <input
-                        key={i}
+                        key={index}
                         type="text"
                         maxLength={1}
-                        value={otp[i] || ""}
-                        onChange={(e) => {
-                          const newOtp = otp.split("");
-                          newOtp[i] = e.target.value;
-                          setOtp(newOtp.join(""));
-
-                          // Auto-focus next input
-                          if (e.target.value && i < 5) {
-                            document.getElementById(`otp-${i + 1}`).focus();
-                          }
-                        }}
-                        id={`otp-${i}`}
-                        className="w-full aspect-square text-center text-2xl font-bold input-field"
+                        value={otp[index]}
+                        onChange={(e) => handleOtpChange(index, e.target.value)}
+                        onKeyDown={(e) => handleKeyDown(index, e)}
+                        id={`otp-${index}`}
+                        className="w-14 h-14 text-center text-2xl font-bold input-field focus:border-primary-500 focus:ring-2 focus:ring-primary-200"
+                        autoFocus={index === 0}
                       />
                     ))}
                   </div>
+                  {error && (
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-2 text-sm text-red-600 text-center"
+                    >
+                      {error}
+                    </motion.p>
+                  )}
                 </div>
 
                 <Button
@@ -242,7 +293,8 @@ const Login = () => {
                     type="button"
                     onClick={() => {
                       setOtpSent(false);
-                      setOtp("");
+                      setOtp(["", "", "", "", "", ""]);
+                      setError("");
                     }}
                     className="text-primary-600 hover:text-primary-700 font-medium text-sm"
                   >
@@ -252,7 +304,14 @@ const Login = () => {
                     Didn't receive the code?{" "}
                     <button
                       type="button"
-                      onClick={handleMagicLink}
+                      onClick={() => {
+                        // Resend OTP
+                        const demoOtp = Math.floor(
+                          100000 + Math.random() * 900000
+                        ).toString();
+                        localStorage.setItem("demoOtp", demoOtp);
+                        alert(`New OTP sent: ${demoOtp}`);
+                      }}
                       className="text-primary-600 hover:text-primary-700 font-medium"
                     >
                       Resend OTP
@@ -262,6 +321,28 @@ const Login = () => {
               </form>
             )}
           </div>
+
+          {/* Demo Instructions */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl"
+          >
+            <div className="flex items-start space-x-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-blue-800 font-medium">Demo Instructions</p>
+                <p className="text-blue-600 text-sm">
+                  1. Enter any valid email format (e.g., user@example.com)
+                  <br />
+                  2. For OTP, use <span className="font-mono">123456</span>
+                  <br />
+                  3. Or use "Send Magic Link" for instant access
+                </p>
+              </div>
+            </div>
+          </motion.div>
         </motion.div>
       </div>
     </div>

@@ -77,7 +77,7 @@ const Home = () => {
           >
             <div className="inline-flex items-center px-4 py-2 rounded-full bg-primary-100 text-primary-700 font-medium mb-6">
               <Calendar className="w-4 h-4 mr-2" />
-              Upcoming Event: Tech Conference 2024
+              Upcoming Event: Tech Conference 2026
             </div>
 
             <h1 className="text-5xl md:text-7xl font-bold mb-6">
@@ -269,7 +269,7 @@ const Home = () => {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-500">
-            <p>© 2024 EventHub. All rights reserved.</p>
+            <p>© 2026 EventHub. All rights reserved.</p>
           </div>
         </div>
       </footer>

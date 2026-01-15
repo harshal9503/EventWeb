@@ -9,6 +9,7 @@ const Button = ({
   isLoading = false,
   disabled = false,
   className = "",
+  type = "button",
   ...props
 }) => {
   const [isPressed, setIsPressed] = useState(false);
@@ -28,6 +29,7 @@ const Button = ({
 
   return (
     <motion.button
+      type={type}
       className={`${variants[variant]} ${className} ${
         disabled ? "opacity-50 cursor-not-allowed" : ""
       }`}

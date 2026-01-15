@@ -18,6 +18,8 @@ import {
   ChevronRight,
   TrendingUp,
   TrendingDown,
+  RefreshCw,
+  MoreVertical,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Button from "../components/Button";
@@ -38,27 +40,50 @@ const Admin = () => {
   // Mock data
   const [registrations, setRegistrations] = useState([]);
   const [loginLogs, setLoginLogs] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
 
   useEffect(() => {
     // Load mock data
     setTimeout(() => {
-      const mockRegistrations = Array.from({ length: 50 }, (_, i) => ({
-        id: i + 1,
-        name: `User ${i + 1}`,
-        email: `user${i + 1}@example.com`,
-        phone: `98765${String(10000 + i).slice(1)}`,
-        gender: i % 3 === 0 ? "Male" : i % 3 === 1 ? "Female" : "Other",
-        ticketType: ["General", "VIP", "Student", "Corporate"][i % 4],
-        status: i % 10 === 0 ? "Blocked" : "Registered",
-        createdAt: new Date(Date.now() - i * 86400000).toISOString(),
-        lastLogin: i % 3 === 0 ? new Date().toISOString() : null,
-      }));
+      // Load registrations from localStorage or create mock
+      const storedRegistrations = JSON.parse(
+        localStorage.getItem("registrations") || "[]"
+      );
 
+      // If no registrations in localStorage, create mock data
+      if (storedRegistrations.length === 0) {
+        const mockRegistrations = Array.from({ length: 25 }, (_, i) => ({
+          id: i + 1,
+          name: `User ${i + 1}`,
+          email: `user${i + 1}@example.com`,
+          phone: `98765${String(10000 + i).slice(1)}`,
+          gender: i % 3 === 0 ? "Male" : i % 3 === 1 ? "Female" : "Other",
+          ticketType: ["General", "VIP", "Student", "Corporate"][i % 4],
+          status: i % 10 === 0 ? "Blocked" : "Registered",
+          createdAt: new Date(Date.now() - i * 86400000).toISOString(),
+          lastLogin: i % 3 === 0 ? new Date().toISOString() : null,
+        }));
+        setRegistrations(mockRegistrations);
+        localStorage.setItem(
+          "registrations",
+          JSON.stringify(mockRegistrations)
+        );
+      } else {
+        setRegistrations(storedRegistrations);
+      }
+
+      // Load feedbacks from localStorage
+      const storedFeedbacks = JSON.parse(
+        localStorage.getItem("eventFeedbacks") || "[]"
+      );
+      setFeedbacks(storedFeedbacks);
+
+      // Create mock login logs
       const mockLogins = Array.from({ length: 30 }, (_, i) => ({
         id: i + 1,
         email: `user${(i % 10) + 1}@example.com`,
         loginTime: new Date(Date.now() - i * 3600000).toISOString(),
-        device: ["Chrome", "Firefox", "Safari"][i % 3],
+        device: ["Chrome", "Firefox", "Safari", "Edge"][i % 4],
         ip: `192.168.${Math.floor(i / 256)}.${i % 256}`,
         activity:
           i % 5 === 0
@@ -69,9 +94,8 @@ const Admin = () => {
             ? "Feedback"
             : "Portal Access",
       }));
-
-      setRegistrations(mockRegistrations);
       setLoginLogs(mockLogins);
+
       setIsLoading(false);
     }, 2000);
   }, []);
@@ -125,6 +149,14 @@ const Admin = () => {
     todayLogins: loginLogs.filter(
       (l) => new Date(l.loginTime).toDateString() === new Date().toDateString()
     ).length,
+    feedbackCount: feedbacks.length,
+    avgRating:
+      feedbacks.length > 0
+        ? (
+            feedbacks.reduce((sum, fb) => sum + parseFloat(fb.rating || 0), 0) /
+            feedbacks.length
+          ).toFixed(1)
+        : 0,
   };
 
   const handleExportCSV = () => {
@@ -150,7 +182,7 @@ const Admin = () => {
         activeTab === "registrations"
           ? [
               row.id,
-              row.name,
+              `"${row.name}"`,
               row.email,
               row.phone,
               row.gender,
@@ -173,21 +205,39 @@ const Admin = () => {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${activeTab}_data.csv`;
+    a.download = `${activeTab}_data_${
+      new Date().toISOString().split("T")[0]
+    }.csv`;
     a.click();
   };
 
   const handleToggleStatus = (id) => {
-    setRegistrations((prev) =>
-      prev.map((reg) =>
-        reg.id === id
-          ? {
-              ...reg,
-              status: reg.status === "Registered" ? "Blocked" : "Registered",
-            }
-          : reg
-      )
+    const updatedRegistrations = registrations.map((reg) =>
+      reg.id === id
+        ? {
+            ...reg,
+            status: reg.status === "Registered" ? "Blocked" : "Registered",
+          }
+        : reg
     );
+    setRegistrations(updatedRegistrations);
+    localStorage.setItem("registrations", JSON.stringify(updatedRegistrations));
+  };
+
+  const handleRefreshData = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      const storedRegistrations = JSON.parse(
+        localStorage.getItem("registrations") || "[]"
+      );
+      const storedFeedbacks = JSON.parse(
+        localStorage.getItem("eventFeedbacks") || "[]"
+      );
+
+      setRegistrations(storedRegistrations);
+      setFeedbacks(storedFeedbacks);
+      setIsLoading(false);
+    }, 1000);
   };
 
   if (isLoading) {
@@ -216,6 +266,8 @@ const Admin = () => {
               change: "+12%",
               trend: "up",
               color: "blue",
+              bgColor: "from-blue-500/10 to-blue-600/10",
+              textColor: "text-blue-400",
             },
             {
               title: "Active Users",
@@ -224,6 +276,8 @@ const Admin = () => {
               change: "+5%",
               trend: "up",
               color: "green",
+              bgColor: "from-emerald-500/10 to-emerald-600/10",
+              textColor: "text-emerald-400",
             },
             {
               title: "Total Logins",
@@ -232,14 +286,18 @@ const Admin = () => {
               change: "+18%",
               trend: "up",
               color: "purple",
+              bgColor: "from-purple-500/10 to-purple-600/10",
+              textColor: "text-purple-400",
             },
             {
-              title: "Today Logins",
-              value: stats.todayLogins,
+              title: "Feedback Received",
+              value: stats.feedbackCount,
               icon: Clock,
-              change: "-2%",
-              trend: "down",
+              change: "+8%",
+              trend: "up",
               color: "orange",
+              bgColor: "from-orange-500/10 to-orange-600/10",
+              textColor: "text-orange-400",
             },
           ].map((stat, index) => (
             <motion.div
@@ -250,8 +308,10 @@ const Admin = () => {
               className="bg-gray-800 rounded-xl p-6 border border-gray-700"
             >
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg bg-${stat.color}-500/10`}>
-                  <stat.icon className={`w-6 h-6 text-${stat.color}-400`} />
+                <div
+                  className={`p-3 rounded-lg bg-gradient-to-br ${stat.bgColor}`}
+                >
+                  <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
                 </div>
                 <div
                   className={`flex items-center ${
@@ -307,6 +367,14 @@ const Admin = () => {
                     className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-primary-500"
                   />
                 </div>
+
+                <button
+                  onClick={handleRefreshData}
+                  className="p-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                  title="Refresh Data"
+                >
+                  <RefreshCw className="w-5 h-5 text-gray-300" />
+                </button>
 
                 <button
                   onClick={handleExportCSV}
@@ -371,7 +439,7 @@ const Admin = () => {
                         ticketType: e.target.value,
                       }))
                     }
-                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
                   >
                     <option value="">All Ticket Types</option>
                     <option value="General">General</option>
@@ -388,7 +456,7 @@ const Admin = () => {
                         gender: e.target.value,
                       }))
                     }
-                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
                   >
                     <option value="">All Genders</option>
                     <option value="Male">Male</option>
@@ -404,7 +472,7 @@ const Admin = () => {
                         status: e.target.value,
                       }))
                     }
-                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                    className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
                   >
                     <option value="">All Status</option>
                     <option value="Registered">Active</option>
@@ -421,7 +489,7 @@ const Admin = () => {
                     dateRange: e.target.value,
                   }))
                 }
-                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                className="px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-primary-500"
               >
                 <option value="all">All Time</option>
                 <option value="today">Today</option>
@@ -438,7 +506,7 @@ const Admin = () => {
                     dateRange: "all",
                   })
                 }
-                className="px-4 py-2 text-gray-300 hover:text-white"
+                className="px-4 py-2 text-gray-300 hover:text-white bg-gray-700 rounded-lg"
               >
                 Clear Filters
               </button>
@@ -686,6 +754,131 @@ const Admin = () => {
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Feedback Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-8 bg-gray-800 rounded-2xl p-6 border border-gray-700"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-white">Feedback Summary</h3>
+              <p className="text-gray-400">
+                User feedback and ratings analysis
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="px-3 py-1 bg-primary-500/20 text-primary-300 rounded-full text-sm">
+                Total: {feedbacks.length}
+              </span>
+              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full text-sm">
+                Avg Rating: {stats.avgRating}/5
+              </span>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="bg-gray-750 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-gray-300">Recent Feedback</span>
+                <MoreVertical className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="space-y-3">
+                {feedbacks.slice(-3).map((feedback, index) => (
+                  <div
+                    key={index}
+                    className="border-l-2 border-primary-500 pl-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white truncate">
+                        {feedback.name}
+                      </span>
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <span
+                            key={i}
+                            className={`text-xs ${
+                              i < (feedback.rating || 0)
+                                ? "text-yellow-400"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-400 truncate">
+                      {feedback.message.substring(0, 40)}...
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-gray-750 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-gray-300">Rating Distribution</span>
+                <BarChart3 className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="space-y-2">
+                {[5, 4, 3, 2, 1].map((rating) => {
+                  const count = feedbacks.filter(
+                    (f) => f.rating === rating.toString()
+                  ).length;
+                  const percentage =
+                    feedbacks.length > 0 ? (count / feedbacks.length) * 100 : 0;
+                  return (
+                    <div key={rating} className="flex items-center">
+                      <span className="text-sm text-gray-300 w-8">
+                        {rating}★
+                      </span>
+                      <div className="flex-1 ml-2">
+                        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-xs text-gray-400 w-10 text-right">
+                        {count}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="bg-gray-750 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-gray-300">Top Categories</span>
+                <Calendar className="w-4 h-4 text-gray-500" />
+              </div>
+              <div className="space-y-2">
+                {["Content", "Speakers", "Organization", "Technical"].map(
+                  (category) => (
+                    <div
+                      key={category}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-sm text-gray-300">{category}</span>
+                      <span className="text-xs px-2 py-1 bg-gray-600 text-gray-300 rounded">
+                        {
+                          feedbacks.filter((f) =>
+                            f.category?.includes(category.toLowerCase())
+                          ).length
+                        }
+                      </span>
+                    </div>
+                  )
+                )}
               </div>
             </div>
           </div>

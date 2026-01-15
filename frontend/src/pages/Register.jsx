@@ -73,17 +73,22 @@ const Register = () => {
       setIsSubmitting(false);
       setIsSuccess(true);
 
-      // Store registration in localStorage (for demo)
+      // Store registration in localStorage
       const registrations = JSON.parse(
         localStorage.getItem("registrations") || "[]"
       );
-      registrations.push({
+      const newRegistration = {
         ...formData,
         id: Date.now(),
         createdAt: new Date().toISOString(),
         status: "registered",
-      });
+        lastLogin: null,
+      };
+      registrations.push(newRegistration);
       localStorage.setItem("registrations", JSON.stringify(registrations));
+
+      // Also store user email for login
+      localStorage.setItem("userEmail", formData.email);
 
       // Redirect after success
       setTimeout(() => {
@@ -125,11 +130,7 @@ const Register = () => {
           </h2>
 
           <p className="text-gray-600 mb-6">
-            Thank you for registering! A confirmation email has been sent to{" "}
-            <span className="font-semibold text-primary-600">
-              {formData.email}
-            </span>
-            .
+            Thank you for registering! You can now login to access the portal.
           </p>
 
           <div className="space-y-4 mb-8">
@@ -140,12 +141,15 @@ const Register = () => {
               <p className="text-sm text-gray-600 mt-1">
                 {formData.name} • {formData.ticketType} • {formData.gender}
               </p>
+              <p className="text-xs text-gray-500 mt-2">
+                Email: {formData.email}
+              </p>
             </div>
           </div>
 
           <div className="animate-pulse">
             <p className="text-gray-500 text-sm">
-              Redirecting to login portal...
+              Redirecting to login page...
             </p>
           </div>
         </motion.div>
@@ -379,7 +383,7 @@ const Register = () => {
                   Date & Time
                 </p>
                 <p className="font-semibold">
-                  Dec 15-16, 2024 • 9:00 AM - 6:00 PM
+                  Dec 15-16, 2026 • 9:00 AM - 6:00 PM
                 </p>
               </div>
               <div className="p-4 bg-secondary-50 rounded-lg">

@@ -8,8 +8,8 @@ export const COLORS = {
 };
 
 export const EVENT_DETAILS = {
-  name: "Tech Conference 2024",
-  date: "December 15-16, 2024",
+  name: "Tech Conference 2026",
+  date: "December 15-16, 2026",
   venue: "Convention Center, Delhi",
   time: "9:00 AM - 6:00 PM",
 };
