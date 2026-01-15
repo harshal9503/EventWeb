@@ -1,0 +1,17 @@
+:root {
+  --primary: #4f46e5;
+  --secondary: #0f172a;
+  --bg: #f8fafc;
+  --card: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui;
+  background: var(--bg);
+  color: var(--secondary);
+}
